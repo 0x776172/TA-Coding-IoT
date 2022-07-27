@@ -1,0 +1,163 @@
+#include <Arduino.h>
+#include <FirebaseESP32.h>
+#include <WiFi.h>
+#include <Wire.h>
+
+#define FIREBASE_HOST "monitoring-hidroponik-24cc8-default-rtdb.firebaseio.com"
+#define FIREBASE_AUTH "Wx01YXZAx8EtjnhwKGXT0bVoWfYX3MANyP8f5aF8"
+#define SSID1 "Redmi Note 9"
+#define PASS1 "shopiatul20"  
+// #define SSID2 "GL88"
+// #define PASS2 "miliknegara" 
+// #define SSID3 "R13"
+// #define PASS3 "enerpe31" 
+// #define SSID4 "Redmi4A"
+// #define PASS4 "hanif1234"
+
+String dataditerima;
+String path = "/Output";
+FirebaseData fbdo;
+FirebaseJson fjson;
+String data[5];
+void iot();
+void parsing_data(String unparsed_data);
+// void setupWiFi() {
+//   AP.addAP(SSID1, PASS1);
+//   AP.addAP(SSID2, PASS2);
+//   AP.addAP(SSID3, PASS3);
+//   AP.addAP(SSID4, PASS4);
+// }
+void setup() {
+  Serial.begin(9600);
+  Serial2.begin(9600);
+
+  // Koneksi ke Wifi
+  // setupWiFi();
+  Serial.print("connecting");
+  WiFi.begin(SSID1, PASS1);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("Connected with IP: ");
+  Serial.println(WiFi.localIP());
+  Serial.println();
+
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+}
+
+void loop() {
+  if (Serial2.available() > 0) {
+    dataditerima = Serial2.readStringUntil('\n');
+    //Serial.println(dataditerima);
+    parsing_data(dataditerima);
+    iot();
+  
+ }
+}
+ void parsing_data(String unparsed_data){
+  int j = 0;
+
+  Serial.print("Data diterima : " );
+  Serial.println(unparsed_data);
+    for(int i=1;i<unparsed_data.length();i++){
+      //pengecekan tiap karakter dengan karakter (#) dan (,)
+    if (unparsed_data[i] == ',')
+    {
+      //increment variabel j, digunakan untuk merubah index array penampung
+      j++;
+      data[j]="";       //inisialisasi variabel array dataDB[j]
+    }
+    else
+    {
+      //proses tampung data saat pengecekan karakter selesai.
+      data[j] = data[j] + unparsed_data[i];
+    }
+  }
+  Serial.print("data 1 : ");
+  Serial.println(data[1]);
+  Serial.print("data 2 : ");
+  Serial.println(data[2]);
+  Serial.print("data 3 : ");
+  Serial.println(data[3]);
+  Serial.print("data 4 : ");
+  Serial.println(data[4]);
+  Serial.print("\n\n");  
+  
+}
+  
+  void iot ()
+  {
+    /*Firebase.set("Suhu Air", data[1]);
+    if (Firebase.failed()){
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+    }
+    delay(1000);
+
+    Firebase.set("Ketinggian Air", data[2]);
+    if (Firebase.failed()){
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+    }
+    delay(1000);
+
+    Firebase.set("Kadar PPM", data[3]);
+    if (Firebase.failed()){
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+    }
+    delay(1000);
+
+    Firebase.set("Nilai pH", data[4]);
+    if (Firebase.failed()){
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+    }
+    delay(1000); */
+    fjson.set("suhu_air", data[1]);
+    fjson.set("ketinggian_air", data[2]);
+    fjson.set("kadar_ppm", data[3]);
+    fjson.set("nilai_ph", data[4]);
+    if(Firebase.pushJSON(fbdo, path, fjson)) {
+      Serial.println("Sukses");
+    } else {
+      Serial.printf("Error: %s\n", fbdo.errorReason().c_str());
+    }
+  //Memberikan status ph, ketinggian air,ppm dan suhu air kepada firebase
+  // if (Firebase.set(firebaseData, "/Hasil_Pembacaan/suhu_air", data[1])){
+  //     Serial.println("Suhu Air terkirim");
+  //   } else{
+  //     Serial.println("Suhu Air tidak terkirim");
+  //     Serial.println("Karena: " + firebaseData.errorReason());
+  //   } 
+   
+  // if (Firebase.set(firebaseData, "/Hasil_Pembacaan/Ketinggian_Air", data[2])){
+  //     Serial.println("Ultrasonik terkirim");
+  //   } else{
+  //     Serial.println("Ultrasonik tidak terkirim");
+  //     Serial.println("Karena: " + firebaseData.errorReason());
+  //   } 
+    
+  // if (Firebase.set(firebaseData, "/Hasil_Pembacaan/Kadar_PPM", data[3])){
+  //     Serial.println("TDS terkirim");
+  //     Serial.println();
+  //   } else{
+  //     Serial.println("TDS tidak terkirim");
+  //     Serial.println("Karena: " + firebaseData.errorReason());
+  //   }
+  // if (Firebase.set(firebaseData, "/Hasil_Pembacaan/Nilai_pH", data[4])){
+  //     Serial.println("Nilai pH terkirim");
+  //     Serial.println();
+  //   } else{
+  //     Serial.println("Nilai pH tidak terkirim");
+  //     Serial.println("Karena: " + firebaseData.errorReason());
+  //   }
+    }

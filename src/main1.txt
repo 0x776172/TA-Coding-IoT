@@ -1,0 +1,93 @@
+// declared library
+#include <Arduino.h>
+#include <FirebaseESP32.h>
+// #include <BH1750.h>
+#include <WiFiMulti.h>
+#include <Adafruit_INA219.h>
+// #include <HTTPClient.h>
+// #include <LiquidCrystal_I2C.h>
+// #include <SD.h>
+#include <Wire.h>
+
+WiFiMulti ap;
+FirebaseData fbdo;
+FirebaseJson fjson;
+
+String path = "/data";
+double val1, val2, val3, valLight;
+
+#define SSID1 "R13"
+#define PASS1 "enerpe31"
+#define SSID2 "add"
+#define PASS2 "11223344"
+#define SSID3 "Ular Sanca"
+#define PASS3 "12093487"
+
+#define fhost "buatproyekakhir-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define fauth "0cEEtQH2xpGcy8uZCeNFCGlFVXKdwQmrLhvWM1X0"
+
+void wifiSetup();
+void FirebaseSetup();
+bool sendData(double val1, double val2, double val3, double valLight);
+
+void setup()
+{
+  Serial.begin(115200);
+  wifiSetup();
+  FirebaseSetup();
+  Serial.println("Setup Done");
+}
+
+void loop()
+{
+  val1 = random(200.0) / 10;
+  val2 = random(200.0) / 10;
+  val3 = random(200.0) / 10;
+  valLight = random(0, 546100.0) / 10;
+  Serial.printf("Panel 1: %f\n", val1);
+  Serial.printf("Panel 2: %f\n", val2);
+  Serial.printf("Panel 3: %f\n", val3);
+  Serial.printf("Intensitas cahaya: %f\n", valLight);
+
+  if (sendData(val1, val2, val3, valLight))
+    Serial.println("Berhasil Mengirim ke Firebase");
+
+  else
+    Serial.printf("Error: %s\n", fbdo.errorReason().c_str());
+
+  delay(60000);
+}
+
+void wifiSetup()
+{
+  ap.addAP(SSID1, PASS1);
+  ap.addAP(SSID2, PASS2);
+  ap.addAP(SSID3, PASS3);
+  Serial.print("Connecting");
+  while (ap.run() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("");
+  Serial.print("Connected to: ");
+  Serial.println(WiFi.SSID());
+}
+
+void FirebaseSetup()
+{
+  Firebase.begin(fhost, fauth);
+  Serial.println("firebase init");
+  Firebase.reconnectWiFi(true);
+}
+
+bool sendData(double val1, double val2, double val3, double valLight)
+{
+  fjson.set("Timestamp/.sv", "timestamp");
+  fjson.set("lightIntensity", valLight);
+  fjson.set("panel1", val1);
+  fjson.set("panel2", val2);
+  fjson.set("panel3", val3);
+
+  return Firebase.pushJSON(fbdo, path, fjson);
+}

@@ -1,0 +1,71 @@
+//declared library
+// #include <BH1750.h>
+// #include <HTTPClient.h>
+#include <LiquidCrystal_I2C.h>
+// #include <SD.h>
+#include <Arduino.h>
+#include <FirebaseESP32.h>
+#include <WiFiMulti.h>
+
+// define available SSID & PASS
+#define SSID1 "R13"
+#define PASS1 "enerpe31"
+#define SSID2 "add"
+#define PASS2 "11223344"
+#define SSID3 "Ular Sanca"
+#define PASS3 "12093487"
+#define SSID4 "AncolKentang"
+#define PASS4 "ppqooqiiq123"
+
+#define Firebase_Host "monitoring-daya-ppns-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define Firebase_Auth "QpcYZuWZUjfsoReNe8zU31BZOdg26fSEPQObsbns"
+FirebaseData fbdo;
+FirebaseJson fjson;
+//initialize variabel and etc
+WiFiMulti AP;
+
+String path = "/ruangan1";
+void setupWiFi(){
+  AP.addAP(SSID1, PASS1);
+  AP.addAP(SSID2, PASS2);
+  AP.addAP(SSID3, PASS3);
+  AP.addAP(SSID4, PASS4);
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  setupWiFi();
+  while(AP.run() != WL_CONNECTED) {
+    Serial.print('.');
+    
+    delay(500);
+  }
+  Serial.println();
+  Firebase.begin(Firebase_Host, Firebase_Auth);
+  Serial.println("Firebase init");
+  Firebase.reconnectWiFi(true);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  int daya = random(100, 200);
+  int kwh = random(200, 500);
+  int teg = random(10, 50);
+  int arus = random(0, 10);
+  fjson.set("Timestamp/.sv", "timestamp");
+  fjson.set("Daya", daya);
+  fjson.set("kwh", kwh);
+  fjson.set("tegR", teg);
+  fjson.set("tegS", teg);
+  fjson.set("tegT", teg);
+  fjson.set("arusR", arus);
+  fjson.set("arusS", arus);
+  fjson.set("arusT", arus);
+  if(!Firebase.pushJSON(fbdo, path, fjson)) {
+    Serial.printf("Error: %s\n", fbdo.errorReason().c_str());
+  } else {
+    Serial.println("Sukses");
+  }
+  delay(10000);
+}
